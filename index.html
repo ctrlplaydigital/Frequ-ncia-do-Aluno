@@ -111,7 +111,7 @@ td.z{color:var(--mut)}
       else if (/text-error/.test(c)) red++;
       else if (/text-neutral/.test(c)) blk++;
     });
-var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?IA|CQ\s?CE)\s?(\d)\b/i); var cp=lastMat.match(/ctrl\s*pro\D*?(\d)/i); if(tl){ var pf2=tl[1].toUpperCase().replace(/\s+/g,''); best=/(IA|CE)$/.test(pf2)?pf2.slice(0,2)+' '+pf2.slice(2)+' '+tl[2]:pf2+tl[2]; } else if(cp){ best='CP IA '+cp[1]; } else { var ml=lastMat.match(/-\s*([A-Za-z0-9 ]+?)\s*\//); if(ml) best=ml[1].trim(); } }
+var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CK|CTO|CT|CYO|CY|CP\s?IA|CQ\s?IA|CQ\s?CE)\s?(\d)\b/i); var cp=lastMat.match(/ctrl\s*pro\D*?(\d)/i); if(tl){ var pf2=tl[1].toUpperCase().replace(/\s+/g,''); best=/(IA|CE)$/.test(pf2)?pf2.slice(0,2)+' '+pf2.slice(2)+' '+tl[2]:(/^(CK|CT|CY)$/.test(pf2)?pf2+'O':pf2)+tl[2]; } else if(cp){ best='CP IA '+cp[1]; } else { var ml=lastMat.match(/-\s*([A-Za-z0-9 ]+?)\s*\//); if(ml) best=ml[1].trim(); } }
     return {nome:best, turma:(lastMat&&lastMat.indexOf('#')>=0?lastMat.substring(lastMat.indexOf('#')).trim():''), prof:(lastMat&&lastMat.indexOf('/')>=0?lastMat.split('/').pop().trim():''), pres:pres, red:red, blk:blk};
   }
 
@@ -146,7 +146,7 @@ var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?I
   }
 
   var ORDER=['CKO1','CKO2','CKO3','CKO4','CTO1','CTO2','CTO3','CTO4','CYO1','CYO2','CYO3','CYO4','CP IA 1','CP IA 2'];
-  function key(n){var k=n.toUpperCase().replace(/\s+/g,''); return k==='CY4'?'CYO4':k;}
+  function key(n){var k=n.toUpperCase().replace(/\s+/g,''); return k.replace(/^(CK|CT|CY)(\d)$/,'$1O$2');}
   function sheet(){
     var keys=ORDER.map(key), by={}, extra=[], P=0, T=0;
     mods.forEach(function(m){
@@ -158,7 +158,7 @@ var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?I
     var idx=[]; keys.forEach(function(k,i){if(by[k])idx.push(i);});
     function f(m){return fmt(pct(m.pres,m.pres+m.red+m.blk));}
     var cells=[
-      T?fmt(pct(P,T)):'0%', T, P, T-P,
+      T?fmt(pct(P,T)):'0%', T, P, T-P, mods.length,
       mods.length?f(mods[0]):'0%',
       mods.length?f(mods[mods.length-1]):'0%'
     ].concat(statsOf(keys,by), keys.map(function(k){return by[k]?f(by[k]):'0%';}), keys.map(function(k){return by[k]?(by[k].prof||''):'';}), trocas(keys,by));
@@ -186,7 +186,7 @@ var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?I
     }
     return [fmt(avg),fmt(med),tr];
   }
-  function headAll(){return ['Freq. total','Aulas totais','Presenças totais','Faltas totais','Freq. primeiro módulo','Freq. último módulo','Média dos módulos','Mediana dos módulos','Tendência'].concat(ORDER, ORDER.map(function(o){return 'Professor do módulo '+o;}), ['Penúltimo professor','Último professor','Turma do último módulo','Trocou de professor','Trocou de professor (penúltimo → último módulo)','Trocou de categoria','Categorias trocadas','Último módulo feito','Última categoria']);}
+  function headAll(){return ['Freq. total','Aulas totais','Presenças totais','Faltas totais','Módulos feitos','Freq. primeiro módulo','Freq. último módulo','Média dos módulos','Mediana dos módulos','Tendência'].concat(ORDER, ORDER.map(function(o){return 'Professor do módulo '+o;}), ['Penúltimo professor','Último professor','Turma do último módulo','Trocou de professor','Trocou de professor (penúltimo → último módulo)','Trocou de categoria','Categorias trocadas','Último módulo feito','Última categoria']);}
   function nrm(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();}
   function trocas(keys,by){
     var seq=[]; keys.forEach(function(k){ if(by[k]&&nrm(by[k].prof)) seq.push(nrm(by[k].prof)); });
@@ -219,7 +219,7 @@ var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?I
     var r = parse(html, $('extra').checked);
     if(r.pres + r.red + r.blk === 0){ msg('Nenhuma aula encontrada. Confira se copiou o HTML da linha do tempo do módulo.', false); return; }
     var nome = $('nome').value.trim() || r.nome || ('Módulo ' + (mods.length+1));
-    var idx = mods.findIndex(function(m){return m.nome.toLowerCase()===nome.toLowerCase();});
+    var idx = mods.findIndex(function(m){return key(m.nome)===key(nome);});
     var item = {nome:nome, prof:r.prof, turma:r.turma, pres:r.pres, red:r.red, blk:r.blk};
     if(idx>=0){ mods[idx]=item; msg('Módulo "'+nome+'" já existia e foi atualizado.', true); }
     else { mods.push(item); msg('Módulo "'+nome+'" adicionado: '+r.pres+' presenças, '+(r.red+r.blk)+' faltas.', true); }
