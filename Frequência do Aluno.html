@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frequência do Aluno</title>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--tx:#161a2b;--mut:#6b7285;--bd:#e0e3ee;--ac:#2563eb;--ok:#16a34a;--bad:#dc2626;--blk:#52525b;--warn:#d97706;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1120;--card:#171b2f;--tx:#e9ecf8;--mut:#98a0b8;--bd:#2a3050;--ac:#5b8cff;--ok:#34d399;--bad:#f87171;--blk:#a1a1aa;--warn:#fbbf24}}
+:root[data-theme="dark"]{--bg:#0e1120;--card:#171b2f;--tx:#e9ecf8;--mut:#98a0b8;--bd:#2a3050;--ac:#5b8cff;--ok:#34d399;--bad:#f87171;--blk:#a1a1aa;--warn:#fbbf24}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1280px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}
+p.sub{margin:0 0 18px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:16px}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:4px}
+textarea,input[type=text]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;font:inherit}
+textarea{height:130px;resize:vertical;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.row .grow{flex:1;min-width:180px}
+button{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button:hover{filter:brightness(1.08)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);margin-top:10px}
+#msg{margin-top:10px;font-size:13px;min-height:18px}
+.err{color:var(--bad)}.okm{color:var(--ok)}
+.global{border-color:var(--ac)}
+.big{font-size:40px;font-weight:800;line-height:1}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}
+.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--mut)}
+.bar{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin-top:12px;border:1px solid var(--bd)}
+.bar>i{display:block;height:100%;background:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.mod h3{margin:-8px -8px 0;padding:12px 10px;cursor:grab;user-select:none;border-radius:10px;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mod h3:hover{background:var(--bg)}
+.mod .pc{font-size:28px;font-weight:800;margin-top:6px}
+.x{padding:2px 9px;font-size:16px;color:var(--mut)}
+.grip{cursor:grab;color:var(--mut);letter-spacing:-3px;user-select:none;margin-right:6px;font-size:18px}
+.mod.over{outline:2px dashed var(--ac)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.blk{color:var(--blk)}
+.low{color:var(--bad)}.mid{color:var(--warn)}.hi{color:var(--ok)}
+.empty{color:var(--mut);text-align:center;padding:24px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:12px}
+.tw{margin-bottom:12px}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px}
+th,td{border:1px solid var(--bd);padding:6px 5px;text-align:center;white-space:normal;word-break:break-word}
+th{background:var(--bg);color:var(--mut);font-weight:600}
+td.z{color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<h1>Frequência do Aluno</h1>
+<p class="sub">Cole o HTML de cada módulo, clique em <b>Calcular módulo</b> e repita. O total acumulado é atualizado automaticamente.</p>
+
+<div class="card">
+  <label for="html">HTML do módulo (copie do portal: Inspecionar → Copy outerHTML)</label>
+  <textarea id="html" placeholder="Cole aqui o HTML da linha do tempo do módulo..."></textarea>
+  <div class="row">
+    <div class="grow" hidden><label for="nome">Nome do módulo</label>
+      <input type="text" id="nome" placeholder="Ex.: CTO1"></div>
+    <button class="pri" id="calc">Calcular módulo</button>
+    <button id="clrtxt">Limpar campo de texto</button>
+  </div>
+  <div class="chk"><input type="checkbox" id="extra" checked><label for="extra" style="margin:0">Contar "Aula Extra" (reposição) como aula</label></div>
+  <div id="msg"></div>
+</div>
+
+<div class="tools">
+  <button id="copy">Copiar resumo</button>
+  <button id="clear">Limpar tudo</button>
+</div>
+
+<div class="card"><div id="tbl"></div><textarea id="tsv" hidden></textarea><div class="row"><button class="pri" id="cpRow">Copiar linha</button><button id="cpHead">Copiar cabeçalho</button><span id="msg2" style="font-size:13px"></span></div><div id="warn" class="err" style="font-size:13px;margin-top:8px"></div></div>
+<div id="out"></div>
+</main>
+
+<script>
+(function(){
+  var mods = []; // {nome, pres, red, blk}
+  var $ = function(id){return document.getElementById(id)};
+
+  function cls(el){
+    var c = el.getAttribute('class') || '';
+    return c;
+  }
+
+  function parse(html, contarExtra){
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    var items = doc.querySelectorAll('.timeline-middle');
+    var pres=0, red=0, blk=0, nome='', votes={}, lastMat='';
+    items.forEach(function(mid){
+      var li = mid.closest('li') || mid.parentElement;
+      var title = '';
+      var p = li.querySelector('.timeline-box p');
+      if (p) title = p.textContent.trim();
+      // Matrícula: só serve para detectar o nome do módulo
+      if (/^Matr[ií]cula/i.test(title)){
+        var t2=title.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?IA|CQ\s?CE)\s?(\d)\b/i); if(t2){var pf=t2[1].toUpperCase().replace(/\s+/g,''); var nm=/(IA|CE)$/.test(pf)?pf.slice(0,2)+' '+pf.slice(2)+' '+t2[2]:pf+t2[2]; votes[nm]=(votes[nm]||0)+1;} lastMat=title;
+        if(!nome){ var m = title.match(/-\s*([A-Za-z0-9 ]+?)\s*\//); if(m) nome = m[1].trim(); }
+        return;
+      }
+      var svg = mid.querySelector('svg');
+      if(!svg) return;
+      if(!contarExtra && /^Aula Extra/i.test(title)) return;
+      var c = cls(svg);
+      if (/text-success/.test(c)) pres++;
+      else if (/text-error/.test(c)) red++;
+      else if (/text-neutral/.test(c)) blk++;
+    });
+var best=''; if(lastMat){ var tl=lastMat.match(/\b(CKO|CTO|CYO|CY|CP\s?IA|CQ\s?IA|CQ\s?CE)\s?(\d)\b/i); var cp=lastMat.match(/ctrl\s*pro\D*?(\d)/i); if(tl){ var pf2=tl[1].toUpperCase().replace(/\s+/g,''); best=/(IA|CE)$/.test(pf2)?pf2.slice(0,2)+' '+pf2.slice(2)+' '+tl[2]:pf2+tl[2]; } else if(cp){ best='CP IA '+cp[1]; } else { var ml=lastMat.match(/-\s*([A-Za-z0-9 ]+?)\s*\//); if(ml) best=ml[1].trim(); } }
+    return {nome:best, turma:(lastMat&&lastMat.indexOf('#')>=0?lastMat.substring(lastMat.indexOf('#')).trim():''), prof:(lastMat&&lastMat.indexOf('/')>=0?lastMat.split('/').pop().trim():''), pres:pres, red:red, blk:blk};
+  }
+
+  function pct(p,t){ return t ? (p/t*100) : 0; }
+  function fmt(n){ return n.toFixed(1).replace('.',',') + '%'; }
+  function tone(v){ return v>=75 ? 'hi' : (v>=60 ? 'mid' : 'low'); }
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
+
+  function render(){
+    var out = $('out'); sheet();
+    if(!mods.length){ out.innerHTML = '<div class="card empty">Nenhum módulo calculado ainda.</div>'; return; }
+    var P=0,R=0,B=0;
+    mods.forEach(function(m){P+=m.pres;R+=m.red;B+=m.blk;});
+    var F=R+B, T=P+F, g=pct(P,T);
+    var h = '<div class="card global"><div style="color:var(--mut);font-size:13px">FREQUÊNCIA GERAL ACUMULADA · '+mods.length+' módulo(s)</div>'
+      + '<div class="big '+tone(g)+'">'+fmt(g)+'</div>'
+      + '<div class="stats"><div class="stat"><b>'+T+'</b><span>aulas</span></div>'
+      + '<div class="stat"><b class="ok">'+P+'</b><span>presenças</span></div>'
+      + '<div class="stat"><b class="bad">'+F+'</b><span>faltas</span></div></div>'
+      + '<div class="bar"><i style="width:'+g+'%"></i></div></div><div class="grid">';
+    mods.forEach(function(m,i){
+      var f=m.red+m.blk, t=m.pres+f, v=pct(m.pres,t);
+      h += '<div class="card mod" data-d="'+i+'"><h3><span>'+esc(m.nome)+'</span><button class="x" data-i="'+i+'" title="Remover">×</button></h3>'
+        + '<div class="pc '+tone(v)+'">'+fmt(v)+'</div>'
+        + '<div class="stats"><div class="stat"><b>'+t+'</b><span>aulas</span></div>'
+        + '<div class="stat"><b class="ok">'+m.pres+'</b><span>presenças</span></div>'
+        + '<div class="stat"><b class="bad">'+f+'</b><span>faltas</span></div></div>'
+        + '<div style="font-size:12px;color:var(--mut);margin-top:8px">Faltas: <span class="bad">'+m.red+' vermelhas</span> + <span class="blk">'+m.blk+' sem registro</span></div>'
+        + '<div class="bar"><i style="width:'+v+'%"></i></div></div>';
+    });
+    out.innerHTML = h + '</div>';
+  }
+
+  var ORDER=['CKO1','CKO2','CKO3','CKO4','CTO1','CTO2','CTO3','CTO4','CYO1','CYO2','CYO3','CYO4','CP IA 1','CP IA 2'];
+  function key(n){var k=n.toUpperCase().replace(/\s+/g,''); return k==='CY4'?'CYO4':k;}
+  function sheet(){
+    var keys=ORDER.map(key), by={}, extra=[], P=0, T=0;
+    mods.forEach(function(m){
+      P+=m.pres; T+=m.pres+m.red+m.blk;
+      var k=key(m.nome);
+      if(keys.indexOf(k)<0){extra.push(m.nome);return;}
+      by[k]=m;
+    });
+    var idx=[]; keys.forEach(function(k,i){if(by[k])idx.push(i);});
+    function f(m){return fmt(pct(m.pres,m.pres+m.red+m.blk));}
+    var cells=[
+      T?fmt(pct(P,T)):'0%', T, P, T-P,
+      mods.length?f(mods[0]):'0%',
+      mods.length?f(mods[mods.length-1]):'0%'
+    ].concat(statsOf(keys,by), keys.map(function(k){return by[k]?f(by[k]):'0%';}), keys.map(function(k){return by[k]?(by[k].prof||''):'';}), trocas(keys,by));
+    $('tsv').value=cells.join('\t');
+    var head=headAll(), h='', n=Math.max(3,Math.min(12,Math.floor(($('tbl').clientWidth||900)/95)));
+    for(var s=0;s<head.length;s+=n){
+      h+='<div class="tw"><table><thead><tr>'+head.slice(s,s+n).map(function(x){return '<th>'+esc(x)+'</th>';}).join('')+'</tr></thead><tbody><tr>'+cells.slice(s,s+n).map(function(x){return '<td'+(x==='0%'?' class="z"':'')+'>'+x+'</td>';}).join('')+'</tr></tbody></table></div>';
+    }
+    $('tbl').innerHTML=h;
+    $('warn').textContent=extra.length?('Fora da sequência (entram só no total): '+extra.join(', ')):'';
+  }
+  function statsOf(keys, by){
+    var v=[]; keys.forEach(function(k){ if(by[k]){ var m=by[k]; v.push(pct(m.pres,m.pres+m.red+m.blk)); } });
+    if(!v.length) return ['0%','0%','Sem dados'];
+    var avg=v.reduce(function(a,b){return a+b;},0)/v.length;
+    var s=v.slice().sort(function(a,b){return a-b;}), h=Math.floor(s.length/2);
+    var med=s.length%2?s[h]:(s[h-1]+s[h])/2;
+    var tr='Sem dados';
+    if(v.length>1){
+      var mx=(v.length-1)/2, num=0, den=0;
+      v.forEach(function(y,i){num+=(i-mx)*(y-avg);den+=(i-mx)*(i-mx);});
+      var sl=num/den;
+      var lab=sl>=8?'Subindo muito':sl>=2?'Subindo':sl>-2?'Estável':sl>-8?'Caindo':'Caindo muito';
+      tr=lab+' ('+(sl>0?'+':'')+sl.toFixed(1).replace('.',',')+' p.p.)';
+    }
+    return [fmt(avg),fmt(med),tr];
+  }
+  function headAll(){return ['Freq. total','Aulas totais','Presenças totais','Faltas totais','Freq. primeiro módulo','Freq. último módulo','Média dos módulos','Mediana dos módulos','Tendência'].concat(ORDER, ORDER.map(function(o){return 'Professor do módulo '+o;}), ['Penúltimo professor','Último professor','Turma do último módulo','Trocou de professor','Trocou de professor (penúltimo → último módulo)','Trocou de categoria','Categorias trocadas','Último módulo feito','Última categoria']);}
+  function nrm(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();}
+  function trocas(keys,by){
+    var seq=[]; keys.forEach(function(k){ if(by[k]&&nrm(by[k].prof)) seq.push(nrm(by[k].prof)); });
+    var any=false; for(var i=1;i<seq.length;i++){ if(seq[i]!==seq[i-1]) any=true; }
+    var last='Não', n=mods.length;
+    if(n>=2){ var a=nrm(mods[n-2].prof), b=nrm(mods[n-1].prof); if(a&&b&&a!==b) last='Sim'; }
+    var ds=[]; mods.forEach(function(m){ var p=(m.prof||'').trim(); if(!p) return; if(!ds.length||nrm(ds[ds.length-1])!==nrm(p)) ds.push(p); });
+    var tl=mods.length?(mods[mods.length-1].turma||''):'';
+    var CAT={CK:'Kids',CT:'Teens',CY:'Young',CP:'Pro'};
+    function cat(m){var mm=key(m.nome).match(/^(CK|CT|CY|CP)/); return mm?mm[1]:'';}
+    var cc='Não', ul='', uc='';
+    if(mods.length){ var lm=mods[mods.length-1]; ul=lm.nome; uc=CAT[cat(lm)]||''; }
+    var cp2=[]; mods.forEach(function(m){ var c=cat(m); if(c&&cp2[cp2.length-1]!==c) cp2.push(c); }); var cpath=cp2.length>1?cp2.join('-'):''; if(cpath) cc='Sim';
+    return [ds.length>1?ds[ds.length-2]:'', ds.length?ds[ds.length-1]:'', tl, any?'Sim':'Não', last, cc, cpath, ul, uc];
+  }
+  window.addEventListener('resize',function(){sheet();});
+  function copyTxt(t){
+    var s=$('msg2');
+    function fb(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(a);s.textContent=ok?'Copiado.':'Não consegui copiar; selecione o texto e use Ctrl+C.';}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){s.textContent='Copiado.';},fb);}else{fb();}
+  }
+  $('cpRow').onclick=function(){copyTxt($('tsv').value);};
+  $('cpHead').onclick=function(){copyTxt(headAll().join('\t'));};
+
+  function msg(t, ok){ var e=$('msg'); e.textContent=t; e.className = ok ? 'okm' : 'err'; }
+
+  $('calc').onclick = function(){
+    var html = $('html').value.trim();
+    if(!html){ msg('Cole o HTML do módulo primeiro.', false); return; }
+    var r = parse(html, $('extra').checked);
+    if(r.pres + r.red + r.blk === 0){ msg('Nenhuma aula encontrada. Confira se copiou o HTML da linha do tempo do módulo.', false); return; }
+    var nome = $('nome').value.trim() || r.nome || ('Módulo ' + (mods.length+1));
+    var idx = mods.findIndex(function(m){return m.nome.toLowerCase()===nome.toLowerCase();});
+    var item = {nome:nome, prof:r.prof, turma:r.turma, pres:r.pres, red:r.red, blk:r.blk};
+    if(idx>=0){ mods[idx]=item; msg('Módulo "'+nome+'" já existia e foi atualizado.', true); }
+    else { mods.push(item); msg('Módulo "'+nome+'" adicionado: '+r.pres+' presenças, '+(r.red+r.blk)+' faltas.', true); }
+    $('html').value=''; $('nome').value='';
+    render();
+  };
+
+  $('out').onclick = function(e){
+    var i = e.target.getAttribute && e.target.getAttribute('data-i');
+    if(i!==null && i!==undefined){ mods.splice(+i,1); render(); }
+  };
+
+  var dragI=null, out0=$('out');
+  function modOf(e){return e.target.closest ? e.target.closest('.mod') : null;}
+  out0.addEventListener('mousedown',function(e){var g=e.target.closest&&e.target.closest('.mod h3'); if(g&&!e.target.closest('.x')){g.closest('.mod').draggable=true;}});
+  document.addEventListener('mouseup',function(){document.querySelectorAll('.mod[draggable=true]').forEach(function(c){c.draggable=false;});});
+  out0.addEventListener('dragstart',function(e){var c=modOf(e); if(!c||!c.draggable){return;} dragI=+c.getAttribute('data-d'); c.style.opacity='.4'; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(dragI));}catch(x){}});
+  out0.addEventListener('dragover',function(e){var c=modOf(e); if(c&&dragI!==null){e.preventDefault(); out0.querySelectorAll('.over').forEach(function(o){o.classList.remove('over');}); c.classList.add('over');}});
+  out0.addEventListener('drop',function(e){var c=modOf(e); if(c&&dragI!==null){e.preventDefault(); var to=+c.getAttribute('data-d'); var it=mods.splice(dragI,1)[0]; mods.splice(to,0,it);} dragI=null; render();});
+  out0.addEventListener('dragend',function(){dragI=null; render();});
+
+  $('clrtxt').onclick=function(){ $('html').value=''; msg('',true); $('html').focus(); };
+  $('clear').onclick = function(){ mods=[]; $('html').value=''; $('nome').value=''; msg('',true); render(); };
+
+  $('copy').onclick = function(){
+    if(!mods.length){ msg('Nada para copiar.', false); return; }
+    var P=0,F=0, lines=[];
+    mods.forEach(function(m){
+      var f=m.red+m.blk, t=m.pres+f; P+=m.pres; F+=f;
+      lines.push(m.nome+': '+m.pres+'/'+t+' presenças ('+fmt(pct(m.pres,t))+'), '+f+' faltas');
+    });
+    lines.push('GERAL: '+P+'/'+(P+F)+' presenças ('+fmt(pct(P,P+F))+'), '+F+' faltas');
+    var txt = lines.join('\n');
+    try{ navigator.clipboard.writeText(txt).then(function(){msg('Resumo copiado.',true);}, function(){window.prompt('Copie o resumo:',txt);}); }
+    catch(e){ window.prompt('Copie o resumo:',txt); }
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
